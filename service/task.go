@@ -53,17 +53,23 @@ func TaskList(ctx *gin.Context) {
 		return
 	}
 
+	// Get query parameter
+	kw := ctx.Query("kw")
+
 	// Get tasks in DB
 	var tasks []database.Task
-	// Use DB#Select for multiple entries
-	err = db.Select(&tasks, "SELECT * FROM tasks") 
+	switch {
+	case kw != "":
+		err = db.Select(&tasks, "SELECT * FROM tasks WHERE title LIKE ?", "%"+kw+"%")
+	default:
+		err = db.Select(&tasks, "SELECT * FROM tasks")
+	}
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
 
 	// truncate task description
-	const maxDescLen = 30
 	var taskViews []TaskViewInList
 	for _, task := range tasks {
 		taskViews = append(taskViews, *viewInListFromTask(&task))
@@ -221,29 +227,29 @@ func UpdateTask(ctx *gin.Context) {
 		return
 	}
 
-	path := fmt.Sprintf("/task/%d", id) 
+	path := fmt.Sprintf("/task/%d", id)
 	ctx.Redirect(http.StatusFound, path)
 }
 
 func DeleteTask(ctx *gin.Context) {
-    // ID の取得
-    id, err := strconv.Atoi(ctx.Param("id"))
-    if err != nil {
-        Error(http.StatusBadRequest, err.Error())(ctx)
-        return
-    }
-    // Get DB connection
-    db, err := database.GetConnection()
-    if err != nil {
-        Error(http.StatusInternalServerError, err.Error())(ctx)
-        return
-    }
-    // Delete the task from DB
-    _, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
-    if err != nil {
-        Error(http.StatusInternalServerError, err.Error())(ctx)
-        return
-    }
-    // Redirect to /list
-    ctx.Redirect(http.StatusFound, "/list")
+	// ID の取得
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+	// Delete the task from DB
+	_, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+	// Redirect to /list
+	ctx.Redirect(http.StatusFound, "/list")
 }

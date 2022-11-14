@@ -1,5 +1,9 @@
 {{ template "header" . }}
 <h1>List of tasks</h1>
+<form action="/list" method="GET">
+    <input type="text" name="kw" value="{{ .Kw }}">
+    <input type="submit" value="検索">
+</form>
 <p><a href="/task/new">新規登録</a></p>
 {{ if not .Tasks }}
 <p>登録データがありません．</p>
