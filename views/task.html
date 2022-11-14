@@ -10,6 +10,11 @@
     <dt>Status</dt>
     <dd><input type="checkbox" {{ if .IsDone }}checked {{ end }}disabled/>済</dd>
 </dl>
+<p>
 <a href="/task/edit/{{ .ID }}"><button type="button">編集</button></a>
 <a href="/list"><button type="button">リストへ戻る</button></a>
+</p>
+<p>
+<a href="/task/delete/{{ .ID }}"><button type="button">削除</button></a>
+</p>
 {{ template "footer" }}
