@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,23 +27,22 @@ func viewInListFromTask(task *database.Task) *TaskViewInList {
 	// truncate task strings
 	title := task.Title
 	if len(title) > maxTitleLen {
-		title = title[:maxTitleLen - 3] + "..."
+		title = title[:maxTitleLen-3] + "..."
 	}
 
 	description := task.Description
 	if len(description) > maxDescLen {
-		description = description[:maxDescLen - 3] + "..."
+		description = description[:maxDescLen-3] + "..."
 	}
 
-	return &TaskViewInList {
-		ID: task.ID,
-		Title: title,
+	return &TaskViewInList{
+		ID:          task.ID,
+		Title:       title,
 		Description: description,
-		CreatedAt: task.CreatedAt.Format(format),
-		IsDone: task.IsDone,
+		CreatedAt:   task.CreatedAt.Format(format),
+		IsDone:      task.IsDone,
 	}
 }
-
 
 // TaskList renders list of tasks in DB
 func TaskList(ctx *gin.Context) {
@@ -98,4 +98,44 @@ func ShowTask(ctx *gin.Context) {
 
 	// Render task
 	ctx.HTML(http.StatusOK, "task.html", task)
+}
+
+func NewTaskForm(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "form_new_task.html", gin.H{"Title": "Task registration"})
+}
+
+func RegisterTask(ctx *gin.Context) {
+	// Get task title
+	title, exist := ctx.GetPostForm("title")
+	if !exist {
+		Error(http.StatusBadRequest, "No title is given")(ctx)
+		return
+	}
+
+	// Get task description
+	description, exist := ctx.GetPostForm("description")
+	if !exist {
+		description = ""
+	}
+
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// Create new data with given title on DB
+	result, err := db.Exec("INSERT INTO tasks (title, description) VALUES (?, ?)", title, description)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// Render status
+	path := "/list" // デフォルトではタスク一覧ページへ戻る
+	if id, err := result.LastInsertId(); err == nil {
+		path = fmt.Sprintf("/task/%d", id) // 正常にIDを取得できた場合は /task/<id> へ戻る
+	}
+	ctx.Redirect(http.StatusFound, path)
 }

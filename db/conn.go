@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	_ "github.com/go-sql-driver/mysql"  // initialize mysql driver
+	_ "github.com/go-sql-driver/mysql" // initialize mysql driver
 	"github.com/jmoiron/sqlx"
 )
 
