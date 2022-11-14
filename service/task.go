@@ -8,6 +8,42 @@ import (
 	database "todolist.go/db"
 )
 
+type (
+	TaskViewInList struct {
+		ID          uint64
+		Title       string
+		Description string
+		CreatedAt   string
+		IsDone      bool
+	}
+)
+
+func viewInListFromTask(task *database.Task) *TaskViewInList {
+	const maxTitleLen = 20
+	const maxDescLen = 30
+	const format = "2006-01-02 15:04:05"
+
+	// truncate task strings
+	title := task.Title
+	if len(title) > maxTitleLen {
+		title = title[:maxTitleLen - 3] + "..."
+	}
+
+	description := task.Description
+	if len(description) > maxDescLen {
+		description = description[:maxDescLen - 3] + "..."
+	}
+
+	return &TaskViewInList {
+		ID: task.ID,
+		Title: title,
+		Description: description,
+		CreatedAt: task.CreatedAt.Format(format),
+		IsDone: task.IsDone,
+	}
+}
+
+
 // TaskList renders list of tasks in DB
 func TaskList(ctx *gin.Context) {
 	// Get DB connection
@@ -25,8 +61,15 @@ func TaskList(ctx *gin.Context) {
 		return
 	}
 
+	// truncate task description
+	const maxDescLen = 30
+	var taskViews []TaskViewInList
+	for _, task := range tasks {
+		taskViews = append(taskViews, *viewInListFromTask(&task))
+	}
+
 	// Render tasks
-	ctx.HTML(http.StatusOK, "task_list.html", gin.H{"Title": "Task list", "Tasks": tasks})
+	ctx.HTML(http.StatusOK, "task_list.html", gin.H{"Title": "Task list", "Tasks": taskViews})
 }
 
 // ShowTask renders a task with given ID
