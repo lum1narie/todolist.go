@@ -100,6 +100,7 @@ func ShowTask(ctx *gin.Context) {
 	}
 
 	// Render task
+	fmt.Println("%#v", task)
 	ctx.HTML(http.StatusOK, "task.html", task)
 }
 

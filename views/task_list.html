@@ -13,7 +13,7 @@
         <th>状態</th>
     </tr>
     {{ range $task := .Tasks }}
-    <tr {{ if $task.IsDone }}class="tasks-donetask"{{ end }}>
+    <tr {{ if $task.IsDone }}class="tasks-donetask" {{ end }}>
         <td class="tasks-id"><a href="/task/{{ $task.ID }}">{{ $task.ID }}</a></td>
         <td class="tasks-title">{{ $task.Title }}</td>
         <td class="tasks-desc">{{ $task.Description }}</td>
