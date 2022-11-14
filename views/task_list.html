@@ -3,19 +3,21 @@
 {{ if not .Tasks }}
 <p>登録データがありません．</p>
 {{ else }}
-<table>
+<table class="tasks-table">
     <tr>
         <th>ID</th>
         <th>タイトル</th>
+        <th>詳細</th>
         <th>登録日</th>
         <th>状態</th>
     </tr>
     {{ range $task := .Tasks }}
-    <tr>
-        <td><a href="/task/{{ $task.ID }}">{{ $task.ID }}</a></td>
-        <td>{{ $task.Title }}</td>
-        <td>{{ $task.CreatedAt }}</td>
-        <td>{{ if $task.IsDone }}済{{ end }}</td>
+    <tr {{ if $task.IsDone }}class="tasks-donetask"{{ end }}>
+        <td class="tasks-id"><a href="/task/{{ $task.ID }}">{{ $task.ID }}</a></td>
+        <td class="tasks-title">{{ $task.Title }}</td>
+        <td class="tasks-desc">{{ $task.Description }}</td>
+        <td class="tasks-createdat">{{ $task.CreatedAt }}</td>
+        <td class="tasks-isdone">{{ if $task.IsDone }}済{{ end }}</td>
     </tr>
     {{ end }}
 </table>
