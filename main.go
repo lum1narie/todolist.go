@@ -40,8 +40,8 @@ func main() {
 	engine.GET("/task/new", service.NewTaskForm)
 	engine.POST("/task/new", service.RegisterTask)
 	// 既存タスクの編集
-	engine.GET("/task/edit/:id", service.NotImplemented)
-	engine.POST("/task/edit/:id", service.NotImplemented)
+	engine.GET("/task/edit/:id", service.EditTaskForm)
+	engine.POST("/task/edit/:id", service.UpdateTask)
 	// 既存タスクの削除
 	engine.GET("/task/delete/:id", service.NotImplemented)
 

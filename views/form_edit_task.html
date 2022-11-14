@@ -1,0 +1,14 @@
+{{ template "header" . }}
+<h1>Task {{ .Task.ID }}: edit</h1>
+<form action="/task/edit/{{ .Task.ID }}" method="POST">
+    <label>Title</label><input type="text" name="title" value="{{ .Task.Title }}" required>
+    <br>
+    <label>Description</label><input type="text" name="description" value="{{ .Task.Description }}">
+    <br>
+    <input type="radio" name="is_done" value="t" {{ if .Task.IsDone }}checked{{ end }}><label>完了</label>
+    <input type="radio" name="is_done" value="f" {{ if not .Task.IsDone }}checked{{ end }}><label>未完了</label>
+    </br>
+    <input type="submit" value="登録">
+    <a href="/task/{{ .Task.ID }}"><button type="button">戻る</button></a>
+</form>
+{{ template "footer" }}
