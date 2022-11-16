@@ -4,9 +4,15 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	database "todolist.go/db"
+)
+
+var (
+	badPasswordLengthRe  = regexp.MustCompile(`^.{0,7}$`)
+	badPasswordOnlyNumRe = regexp.MustCompile(`^[0-9]*$`)
 )
 
 const (
@@ -20,25 +26,60 @@ func hash(pw string) []byte {
 	return h.Sum(nil)
 }
 
+func validatePassword(pw string) (bool, string) {
+	if badPasswordLengthRe.MatchString(pw) {
+		return false, "Password is too short"
+	}
+	if badPasswordOnlyNumRe.MatchString(pw) {
+		return false, "Password only contains number"
+	}
+
+	return true, ""
+}
+
 func RegisterUser(ctx *gin.Context) {
 	// フォームデータの受け取り
 	username := ctx.PostForm("username")
 	password := ctx.PostForm("password")
-	switch {
-	case username == "":
+	passwordRe := ctx.PostForm("password-re")
+
+	if username == "" {
 		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
 			gin.H{
-				"Title":    "Register user",
-				"Error":    "Usernane is not provided",
-				"Username": username,
+				"Title":      "Register user",
+				"Error":      "Usernane is not provided",
+				"Password":   password,
+				"PasswordRe": passwordRe,
 			})
-	case password == "":
+		return
+	}
+	if password == "" {
 		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
 			gin.H{
 				"Title":    "Register user",
 				"Error":    "Password is not provided",
-				"Password": password,
+				"Username": username,
 			})
+		return
+	}
+	if password != passwordRe {
+		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
+			gin.H{
+				"Title":    "Register user",
+				"Error":    "Retype Password doesn't match",
+				"Username": username,
+			})
+		return
+	}
+
+	if result, msg := validatePassword(password); !result {
+		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
+			gin.H{
+				"Title":    "Register user",
+				"Error":    msg,
+				"Username": username,
+			})
+		return
 	}
 
 	// DB 接続
@@ -62,8 +103,9 @@ func RegisterUser(ctx *gin.Context) {
 				"Title": "Register user",
 				"Error": fmt.Sprintf(
 					"Username '%s' is already taken", username),
-				"Username": username,
-				"Password": password,
+				"Username":   username,
+				"Password":   password,
+				"PasswordRe": passwordRe,
 			})
 		return
 	}
