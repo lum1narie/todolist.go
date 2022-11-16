@@ -53,17 +53,27 @@ func TaskList(ctx *gin.Context) {
 		return
 	}
 
+	// Get query parameter
+	kw := ctx.Query("kw")
+	var status database.SearchBool
+	statusRaw := ctx.Query("status")
+	switch statusRaw {
+	case "finished":
+		status = database.SearchTrue
+	case "unfinished":
+		status = database.SearchFalse
+	default:
+		status = database.SearchBoth
+	}
+
 	// Get tasks in DB
-	var tasks []database.Task
-	// Use DB#Select for multiple entries
-	err = db.Select(&tasks, "SELECT * FROM tasks") 
+	tasks, err := database.GetTasks(db, kw, status)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
 
 	// truncate task description
-	const maxDescLen = 30
 	var taskViews []TaskViewInList
 	for _, task := range tasks {
 		taskViews = append(taskViews, *viewInListFromTask(&task))
@@ -71,7 +81,8 @@ func TaskList(ctx *gin.Context) {
 
 	// Render tasks
 	ctx.HTML(http.StatusOK, "task_list.html",
-		gin.H{"Title": "Task list", "Tasks": taskViews})
+		gin.H{"Title": "Task list", "Tasks": taskViews, "Kw": kw,
+			"Status": statusRaw})
 }
 
 // ShowTask renders a task with given ID
@@ -100,7 +111,6 @@ func ShowTask(ctx *gin.Context) {
 	}
 
 	// Render task
-	fmt.Println("%#v", task)
 	ctx.HTML(http.StatusOK, "task.html", task)
 }
 
@@ -221,29 +231,29 @@ func UpdateTask(ctx *gin.Context) {
 		return
 	}
 
-	path := fmt.Sprintf("/task/%d", id) 
+	path := fmt.Sprintf("/task/%d", id)
 	ctx.Redirect(http.StatusFound, path)
 }
 
 func DeleteTask(ctx *gin.Context) {
-    // ID の取得
-    id, err := strconv.Atoi(ctx.Param("id"))
-    if err != nil {
-        Error(http.StatusBadRequest, err.Error())(ctx)
-        return
-    }
-    // Get DB connection
-    db, err := database.GetConnection()
-    if err != nil {
-        Error(http.StatusInternalServerError, err.Error())(ctx)
-        return
-    }
-    // Delete the task from DB
-    _, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
-    if err != nil {
-        Error(http.StatusInternalServerError, err.Error())(ctx)
-        return
-    }
-    // Redirect to /list
-    ctx.Redirect(http.StatusFound, "/list")
+	// ID の取得
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+	// Delete the task from DB
+	_, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+	// Redirect to /list
+	ctx.Redirect(http.StatusFound, "/list")
 }
