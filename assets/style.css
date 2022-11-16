@@ -29,3 +29,7 @@
 .tasks-donetask {
     background-color: #ccc;
 }
+
+.error {
+    color: red;
+}
