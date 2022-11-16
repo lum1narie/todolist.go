@@ -1,0 +1,8 @@
+{{ template "header" . }}
+<h1>ユーザ登録</h1>
+<form action="/user/new" method="POST">
+    <label>ユーザ名: </label><input type="text" name="username" required><br>
+    <label>パスワード: </label><input type="text" name="password" required><br>
+    <input type="submit" value="登録">
+</form>
+{{ template "footer" }}

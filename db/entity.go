@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+// Task corresponds to a row in `users` table
+type User struct {
+    ID        uint64    `db:"id"`
+    Name      string    `db:"name"`
+    Password  []byte    `db:"password"`
+}
+
 // Task corresponds to a row in `tasks` table
 type Task struct {
 	ID          uint64    `db:"id"`
