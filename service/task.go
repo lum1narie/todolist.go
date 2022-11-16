@@ -55,15 +55,19 @@ func TaskList(ctx *gin.Context) {
 
 	// Get query parameter
 	kw := ctx.Query("kw")
+	var status database.SearchBool
+	statusRaw := ctx.Query("status")
+	switch statusRaw {
+	case "finished":
+		status = database.SearchTrue
+	case "unfinished":
+		status = database.SearchFalse
+	default:
+		status = database.SearchBoth
+	}
 
 	// Get tasks in DB
-	var tasks []database.Task
-	switch {
-	case kw != "":
-		err = db.Select(&tasks, "SELECT * FROM tasks WHERE title LIKE ?", "%"+kw+"%")
-	default:
-		err = db.Select(&tasks, "SELECT * FROM tasks")
-	}
+	tasks, err := database.GetTasks(db, kw, status)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -77,7 +81,8 @@ func TaskList(ctx *gin.Context) {
 
 	// Render tasks
 	ctx.HTML(http.StatusOK, "task_list.html",
-		gin.H{"Title": "Task list", "Tasks": taskViews})
+		gin.H{"Title": "Task list", "Tasks": taskViews, "Kw": kw,
+			"Status": statusRaw})
 }
 
 // ShowTask renders a task with given ID
@@ -106,7 +111,6 @@ func ShowTask(ctx *gin.Context) {
 	}
 
 	// Render task
-	fmt.Println("%#v", task)
 	ctx.HTML(http.StatusOK, "task.html", task)
 }
 
