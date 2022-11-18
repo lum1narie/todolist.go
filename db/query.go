@@ -76,6 +76,14 @@ func GetTasksByUser(db *sqlx.DB,
 	return tasks, nil
 }
 
+func IsTaskBelongsToUser(db *sqlx.DB, taskID uint64, userID uint64) (bool, error) {
+	var count uint64
+	err := db.Get(&count,
+		"SELECT COUNT(*) FROM ownership WHERE task_id = ? AND user_id = ?",
+		taskID, userID)
+	return count > 0, err
+}
+
 func AddTask(db *sqlx.DB, title string, description string) (sql.Result, error) {
 	return db.Exec(
 		"INSERT INTO tasks (title, description) VALUES (?, ?)",
@@ -83,10 +91,10 @@ func AddTask(db *sqlx.DB, title string, description string) (sql.Result, error) 
 }
 
 func UpdateTaskById(db *sqlx.DB, id uint64,
-	title string, description string, is_done bool) (sql.Result, error) {
+	title string, description string, isDone bool) (sql.Result, error) {
 	return db.Exec(
 		"UPDATE tasks SET title = ?, description = ?, is_done = ? WHERE id = ?",
-		title, description, is_done, id)
+		title, description, isDone, id)
 }
 
 func DeleteTaskById(db *sqlx.DB, id uint64) (sql.Result, error) {

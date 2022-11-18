@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 	database "todolist.go/db"
 )
 
@@ -43,6 +44,11 @@ func viewInListFromTask(task *database.Task) *TaskViewInList {
 		CreatedAt:   task.CreatedAt.Format(format),
 		IsDone:      task.IsDone,
 	}
+}
+
+func checkIsOwnedTask(ctx *gin.Context, db *sqlx.DB, taskID uint64) (bool, error) {
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	return database.IsTaskBelongsToUser(db, taskID, userID)
 }
 
 // TaskList renders list of tasks in DB
@@ -100,6 +106,17 @@ func ShowTask(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
 		return
 	}
 
@@ -168,12 +185,25 @@ func EditTaskForm(ctx *gin.Context) {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
+		return
+	}
+
 	// Get target task
 	task, err := database.GetTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
 	}
+	
 	// Render edit form
 	ctx.HTML(http.StatusOK, "form_edit_task.html",
 		gin.H{"Title": fmt.Sprintf("Edit task %d", task.ID), "Task": task})
@@ -184,6 +214,24 @@ func UpdateTask(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
 		return
 	}
 
@@ -201,26 +249,19 @@ func UpdateTask(ctx *gin.Context) {
 	}
 
 	// Get task status
-	is_done_raw, exist := ctx.GetPostForm("is_done")
+	isDoneRaw, exist := ctx.GetPostForm("is_done")
 	if !exist {
 		Error(http.StatusBadRequest, "No is_done is given")(ctx)
 		return
 	}
-	is_done, err := strconv.ParseBool(is_done_raw)
-	if err != nil {
-		Error(http.StatusInternalServerError, err.Error())(ctx)
-		return
-	}
-
-	// Get DB connection
-	db, err := database.GetConnection()
+	isDone, err := strconv.ParseBool(isDoneRaw)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
 
 	// Create new data with given title on DB
-	_, err = database.UpdateTaskById(db, uint64(id), title, description, is_done)
+	_, err = database.UpdateTaskById(db, uint64(id), title, description, isDone)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -243,6 +284,18 @@ func DeleteTask(ctx *gin.Context) {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
+		return
+	}
+
 	// Delete the task from DB
 	_, err = database.DeleteTaskById(db, uint64(id))
 	if err != nil {
