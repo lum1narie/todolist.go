@@ -21,3 +21,14 @@ CREATE TABLE `tasks` (
     `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `ownership`;
+
+CREATE TABLE `ownership` (
+    `user_id` bigint(20) NOT NULL,
+    `task_id` bigint(20) NOT NULL,
+    PRIMARY KEY (`user_id`, `task_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE
+) DEFAULT CHARSET=utf8mb4;

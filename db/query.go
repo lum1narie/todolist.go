@@ -12,32 +12,25 @@ const (
 	SearchBoth
 )
 
-func GetTasks(db *sqlx.DB, name string, status SearchBool) ([]Task, error) {
+func GetTasksByUser(db *sqlx.DB,
+	userID uint64, name string, status SearchBool) ([]Task, error) {
 	var tasks []Task
 	var err error
+
+	query := "SELECT id, title, description, created_at, is_done" +
+		" FROM tasks INNER JOIN ownership ON task_id = tasks.id" +
+		" WHERE user_id = ?"
+	switch status {
+	case SearchTrue:
+		query += " AND is_done = TRUE"
+	case SearchFalse:
+		query += " AND is_done = FALSE"
+	}
 	if name == "" {
-		switch status {
-		case SearchBoth:
-			err = db.Select(&tasks, "SELECT * FROM tasks")
-		case SearchTrue:
-			err = db.Select(&tasks, "SELECT * FROM tasks WHERE is_done = TRUE")
-		case SearchFalse:
-			err = db.Select(&tasks, "SELECT * FROM tasks WHERE is_done = FALSE")
-		}
+		err = db.Select(&tasks, query, userID)
 	} else {
-		switch status {
-		case SearchBoth:
-			err = db.Select(&tasks,
-				"SELECT * FROM tasks WHERE title LIKE ?", "%"+name+"%")
-		case SearchTrue:
-			err = db.Select(&tasks,
-				"SELECT * FROM tasks WHERE is_done = TRUE and title LIKE ?",
-				"%"+name+"%")
-		case SearchFalse:
-			err = db.Select(&tasks,
-				"SELECT * FROM tasks WHERE is_done = FALSE and title LIKE ?",
-				"%"+name+"%")
-		}
+		query += " AND title LIKE ?"
+		err = db.Select(&tasks, query, userID, "%"+name+"%")
 	}
 
 	if err != nil {

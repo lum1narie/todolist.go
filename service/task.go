@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	database "todolist.go/db"
 )
@@ -67,7 +68,8 @@ func TaskList(ctx *gin.Context) {
 	}
 
 	// Get tasks in DB
-	tasks, err := database.GetTasks(db, kw, status)
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	tasks, err := database.GetTasksByUser(db, userID, kw, status)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
