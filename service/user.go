@@ -40,6 +40,13 @@ func validatePassword(pw string) (bool, string) {
 	return true, ""
 }
 
+func removeSession(ctx *gin.Context) {
+	session := sessions.Default(ctx)
+	session.Clear()
+	session.Options(sessions.Options{Path: "/", MaxAge: -1})
+	session.Save()
+}
+
 func Login(ctx *gin.Context) {
 	username := ctx.PostForm("username")
 	password := ctx.PostForm("password")
@@ -70,16 +77,14 @@ func Login(ctx *gin.Context) {
 	// セッションの保存
 	session := sessions.Default(ctx)
 	session.Set(userkey, user.ID)
+	session.Options(sessions.Options{MaxAge: 3 * 24 * 60 * 60})
 	session.Save()
 
 	ctx.Redirect(http.StatusFound, "/list")
 }
 
 func Logout(ctx *gin.Context) {
-	session := sessions.Default(ctx)
-	session.Clear()
-	session.Options(sessions.Options{MaxAge: -1})
-	session.Save()
+	removeSession(ctx)
 	ctx.Redirect(http.StatusFound, "/")
 }
 
@@ -167,7 +172,6 @@ func RegisterUser(ctx *gin.Context) {
 
 	// 保存状態の確認
 	id, _ := result.LastInsertId()
-	println(id, uint64(id))
 	user, err := database.GetUserById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
@@ -180,4 +184,26 @@ func RegisterUser(ctx *gin.Context) {
 
 func NewUserForm(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "new_user_form.html", gin.H{"Title": "Register user"})
+}
+
+func DeleteUser(ctx *gin.Context) {
+	// ID の取得
+	id, _ := sessions.Default(ctx).Get(userkey).(uint64)
+
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// Delete the task from DB
+	_, err = database.DeleteUserById(db, uint64(id))
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	removeSession(ctx)
+	ctx.Redirect(http.StatusFound, "/")
 }

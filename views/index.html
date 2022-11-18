@@ -4,6 +4,7 @@
     {{ if .IsLoggedIn }}
     <li><a href="/list">登録済みタスク一覧</a></li>
     <li><a href="/logout">ログアウト</a></li>
+    <li><a href="javascript:void(0)" onclick=confirm_user_delete()>ユーザー削除</a></li>
     {{ else }}
     <li><a href="/user/new">ユーザー登録</a></li>
     <li><a href="/login">ログイン</a></li>

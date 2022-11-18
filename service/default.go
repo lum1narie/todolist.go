@@ -10,7 +10,8 @@ import (
 
 // Home renders index.html
 func Home(ctx *gin.Context) {
-	isLoggedin := !(sessions.Default(ctx).Get(userkey) == nil)
+	fmt.Println(sessions.Default(ctx).Get(userkey))
+	isLoggedin := sessions.Default(ctx).Get(userkey) != nil
 	ctx.HTML(http.StatusOK, "index.html",
 		gin.H{"Title": "HOME", "IsLoggedIn": isLoggedin})
 }

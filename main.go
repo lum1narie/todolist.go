@@ -50,6 +50,7 @@ func main() {
 	// ユーザ登録
 	engine.GET("/user/new", service.NewUserForm)
 	engine.POST("/user/new", service.RegisterUser)
+	engine.DELETE("/user/me", service.LoginCheck, service.DeleteUser)
 
 	// ログイン
 	engine.GET("/login", service.LoginForm)

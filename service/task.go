@@ -137,7 +137,7 @@ func NewTaskForm(ctx *gin.Context) {
 }
 
 func RegisterTask(ctx *gin.Context) {
-	userID, _ := sessions.Default(ctx).Get("user").(uint64)
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
 
 	// Get task title
 	title, exist := ctx.GetPostForm("title")

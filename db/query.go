@@ -41,6 +41,10 @@ func AddUser(db *sqlx.DB, name string, password []byte) (sql.Result, error) {
 		name, password)
 }
 
+func DeleteUserById(db *sqlx.DB, id uint64) (sql.Result, error) {
+	return db.Exec("DELETE FROM users WHERE id=?", id)
+}
+
 func GetTaskById(db *sqlx.DB, id uint64) (Task, error) {
 	var task Task
 	// Use DB#Get for one entry
