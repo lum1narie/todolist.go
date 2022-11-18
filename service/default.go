@@ -30,6 +30,6 @@ func Error(code int, message string) gin.HandlerFunc {
 	}
 }
 
-func NotFound() gin.HandlerFunc{
+func NotFound() gin.HandlerFunc {
 	return Error(http.StatusNotFound, "Page not found")
 }

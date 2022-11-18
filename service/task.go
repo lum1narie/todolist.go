@@ -201,7 +201,7 @@ func EditTaskForm(ctx *gin.Context) {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
 	}
-	
+
 	// Render edit form
 	ctx.HTML(http.StatusOK, "form_edit_task.html",
 		gin.H{"Title": fmt.Sprintf("Edit task %d", task.ID), "Task": task})
