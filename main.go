@@ -45,6 +45,8 @@ func main() {
 	engine.Static("/assets", "./assets")
 	engine.GET("/", service.Home)
 
+	engine.NoRoute(service.NotFound())
+
 	// ユーザ登録
 	engine.GET("/user/new", service.NewUserForm)
 	engine.POST("/user/new", service.RegisterUser)

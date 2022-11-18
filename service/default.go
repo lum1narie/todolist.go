@@ -28,3 +28,7 @@ func Error(code int, message string) gin.HandlerFunc {
 		ctx.HTML(code, "error.html", gin.H{"Code": code, "Error": message})
 	}
 }
+
+func NotFound() gin.HandlerFunc{
+	return Error(http.StatusNotFound, "Page not found")
+}
