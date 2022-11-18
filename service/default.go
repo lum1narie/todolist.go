@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 // Home renders index.html
 func Home(ctx *gin.Context) {
-	ctx.HTML(http.StatusOK, "index.html", gin.H{"Title": "HOME"})
+	fmt.Println(sessions.Default(ctx).Get(userkey))
+	isLoggedin := sessions.Default(ctx).Get(userkey) != nil
+	ctx.HTML(http.StatusOK, "index.html",
+		gin.H{"Title": "HOME", "IsLoggedIn": isLoggedin})
 }
 
 // NotImplemented renders error.html with 501 Not Implemented
@@ -24,4 +28,8 @@ func Error(code int, message string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.HTML(code, "error.html", gin.H{"Code": code, "Error": message})
 	}
+}
+
+func NotFound() gin.HandlerFunc{
+	return Error(http.StatusNotFound, "Page not found")
 }

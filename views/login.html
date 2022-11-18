@@ -1,0 +1,15 @@
+{{ template "header" . }}
+<h1>Login</h1>
+{{ if .Error }}
+<p>
+<div class="error">{{ .Error }}</div>
+</p>
+{{ end }}
+<form action="/login" method="POST">
+    <label>ユーザ名: </label><input type="text" name="username" value="{{ .Username }}" required><br>
+    <label>パスワード: </label><input type="password" name="password" required></br>
+    <input type="submit" value="ログイン">
+</form>
+<p><a href="/user/new">ユーザ登録</a></p>
+<p><a href="/">ホームへ戻る</a></p>
+{{ template "footer" }}

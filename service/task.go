@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 	database "todolist.go/db"
 )
 
@@ -44,6 +46,11 @@ func viewInListFromTask(task *database.Task) *TaskViewInList {
 	}
 }
 
+func checkIsOwnedTask(ctx *gin.Context, db *sqlx.DB, taskID uint64) (bool, error) {
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	return database.IsTaskBelongsToUser(db, taskID, userID)
+}
+
 // TaskList renders list of tasks in DB
 func TaskList(ctx *gin.Context) {
 	// Get DB connection
@@ -67,7 +74,8 @@ func TaskList(ctx *gin.Context) {
 	}
 
 	// Get tasks in DB
-	tasks, err := database.GetTasks(db, kw, status)
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	tasks, err := database.GetTasksByUser(db, userID, kw, status)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -101,10 +109,19 @@ func ShowTask(ctx *gin.Context) {
 		return
 	}
 
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
+		return
+	}
+
 	// Get a task with given ID
-	var task database.Task
-	// Use DB#Get for one entry
-	err = db.Get(&task, "SELECT * FROM tasks WHERE id=?", id)
+	task, err := database.GetTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
@@ -120,6 +137,8 @@ func NewTaskForm(ctx *gin.Context) {
 }
 
 func RegisterTask(ctx *gin.Context) {
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+
 	// Get task title
 	title, exist := ctx.GetPostForm("title")
 	if !exist {
@@ -141,20 +160,14 @@ func RegisterTask(ctx *gin.Context) {
 	}
 
 	// Create new data with given title on DB
-	result, err := db.Exec(
-		"INSERT INTO tasks (title, description) VALUES (?, ?)",
-		title, description)
+	taskID, err := database.AddTaskWithUser(db, title, description, userID)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
 
 	// Render status
-	path := "/list" // デフォルトではタスク一覧ページへ戻る
-	if id, err := result.LastInsertId(); err == nil {
-		path = fmt.Sprintf("/task/%d", id) // 正常にIDを取得できた場合は /task/<id> へ戻る
-	}
-	ctx.Redirect(http.StatusFound, path)
+	ctx.Redirect(http.StatusFound, fmt.Sprintf("/task/%d", taskID))
 }
 
 func EditTaskForm(ctx *gin.Context) {
@@ -170,13 +183,25 @@ func EditTaskForm(ctx *gin.Context) {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
-	// Get target task
-	var task database.Task
-	err = db.Get(&task, "SELECT * FROM tasks WHERE id=?", id)
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
 	}
+	if !isOwner {
+		NotFound()(ctx)
+		return
+	}
+
+	// Get target task
+	task, err := database.GetTaskById(db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	
 	// Render edit form
 	ctx.HTML(http.StatusOK, "form_edit_task.html",
 		gin.H{"Title": fmt.Sprintf("Edit task %d", task.ID), "Task": task})
@@ -187,6 +212,24 @@ func UpdateTask(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+
+	// Get DB connection
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
 		return
 	}
 
@@ -204,28 +247,19 @@ func UpdateTask(ctx *gin.Context) {
 	}
 
 	// Get task status
-	is_done_raw, exist := ctx.GetPostForm("is_done")
+	isDoneRaw, exist := ctx.GetPostForm("is_done")
 	if !exist {
 		Error(http.StatusBadRequest, "No is_done is given")(ctx)
 		return
 	}
-	is_done, err := strconv.ParseBool(is_done_raw)
-	if err != nil {
-		Error(http.StatusInternalServerError, err.Error())(ctx)
-		return
-	}
-
-	// Get DB connection
-	db, err := database.GetConnection()
+	isDone, err := strconv.ParseBool(isDoneRaw)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
 
 	// Create new data with given title on DB
-	_, err = db.Exec(
-		"UPDATE tasks SET title = ?, description = ?, is_done = ? WHERE id = ?",
-		title, description, is_done, id)
+	_, err = database.UpdateTaskById(db, uint64(id), title, description, isDone)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -248,8 +282,20 @@ func DeleteTask(ctx *gin.Context) {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
+
+	// reject if user is not owner
+	isOwner, err := checkIsOwnedTask(ctx, db, uint64(id))
+	if err != nil {
+		Error(http.StatusBadRequest, err.Error())(ctx)
+		return
+	}
+	if !isOwner {
+		NotFound()(ctx)
+		return
+	}
+
 	// Delete the task from DB
-	_, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
+	_, err = database.DeleteTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
