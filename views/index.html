@@ -1,7 +1,12 @@
 {{ template "header" . }}
 <h1>TODO List</h1>
 <ul>
-    <li><a href="/user/new">ユーザー登録</a></li>
+    {{ if .IsLoggedIn }}
     <li><a href="/list">登録済みタスク一覧</a></li>
+    <li><a href="/logout">ログアウト</a></li>
+    {{ else }}
+    <li><a href="/user/new">ユーザー登録</a></li>
+    <li><a href="/login">ログイン</a></li>
+    {{ end }}
 </ul>
 {{ template "footer" }}

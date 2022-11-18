@@ -4,14 +4,11 @@
     <input type="text" name="kw" value="{{ .Kw }}">
     <input type="submit" value="検索">
     <br>
-    <input type="radio" id="search-both" name="status" value="both"
-           {{ if or (not .Status)  (eq .Status "both") }} checked{{ end }}>
+    <input type="radio" id="search-both" name="status" value="both" {{ if or (not .Status)  (eq .Status "both") }} checked{{ end }}>
     <label for="search-both">全て</label>
-    <input type="radio" id="search-unfinished" name="status" value="unfinished"
-           {{ if eq .Status "unfinished" }} checked{{ end }}>
+    <input type="radio" id="search-unfinished" name="status" value="unfinished" {{ if eq .Status "unfinished" }} checked{{ end }}>
     <label for="search-unfinished">未完了タスクのみ</label>
-    <input type="radio" id="search-finished" name="status" value="finished"
-           {{ if eq .Status "finished" }} checked{{ end }}>
+    <input type="radio" id="search-finished" name="status" value="finished" {{ if eq .Status "finished" }} checked{{ end }}>
     <label for="search-finished">完了済みタスクのみ</label>
 </form>
 <p><a href="/task/new">新規登録</a></p>
@@ -37,4 +34,5 @@
     {{ end }}
 </table>
 {{ end }}
+<p><a href="/">ホームへ戻る</a></p>
 {{ template "footer" }}

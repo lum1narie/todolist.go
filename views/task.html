@@ -12,9 +12,9 @@
 </dl>
 <p>
     <a href="/task/edit/{{ .ID }}"><button type="button">編集</button></a>
-    <a href="/list"><button type="button">リストへ戻る</button></a>
+    <button type="button" onclick=confirm_delete({{ .ID }})>削除</button>
 </p>
 <p>
-    <button type="button" onclick=confirm_delete({{ .ID }})>削除</button>
+    <a href="/list">リストへ戻る</a>
 </p>
 {{ template "footer" }}

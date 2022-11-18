@@ -2,10 +2,12 @@ package service
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"regexp"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	database "todolist.go/db"
 )
@@ -16,7 +18,8 @@ var (
 )
 
 const (
-	salt = "f3f66d75-51fe-455d-a6f6-379902e4efc3"
+	salt    = "f3f66d7551fe455da6f6379902e4efc3"
+	userkey = "user"
 )
 
 func hash(pw string) []byte {
@@ -35,6 +38,55 @@ func validatePassword(pw string) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func Login(ctx *gin.Context) {
+	username := ctx.PostForm("username")
+	password := ctx.PostForm("password")
+
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// ユーザの取得
+	var user database.User
+	err = db.Get(&user,
+		"SELECT id, name, password FROM users WHERE name = ?", username)
+	if err != nil {
+		ctx.HTML(http.StatusBadRequest, "login.html",
+			gin.H{"Title": "Login", "Username": username,
+				"Error": "User or Password is wrong"})
+		return
+	}
+
+	// パスワードの照合
+	if hex.EncodeToString(user.Password) != hex.EncodeToString(hash(password)) {
+		ctx.HTML(http.StatusBadRequest, "login.html",
+			gin.H{"Title": "Login", "Username": username,
+				"Error": "User or Password is wrong"})
+		return
+	}
+
+	// セッションの保存
+	session := sessions.Default(ctx)
+	session.Set(userkey, user.ID)
+	session.Save()
+
+	ctx.Redirect(http.StatusFound, "/list")
+}
+
+func Logout(ctx *gin.Context) {
+    session := sessions.Default(ctx)
+    session.Clear()
+    session.Options(sessions.Options{MaxAge: -1})
+    session.Save()
+    ctx.Redirect(http.StatusFound, "/")
+}
+
+func LoginForm(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "login.html", gin.H{"Title": "Login"})
 }
 
 func RegisterUser(ctx *gin.Context) {
