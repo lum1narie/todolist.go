@@ -183,7 +183,8 @@ func RegisterUser(ctx *gin.Context) {
 }
 
 func NewUserForm(ctx *gin.Context) {
-	ctx.HTML(http.StatusOK, "new_user_form.html", gin.H{"Title": "Register user"})
+	ctx.HTML(http.StatusOK, "new_user_form.html",
+		gin.H{"Title": "Register user"})
 }
 
 func DeleteUser(ctx *gin.Context) {

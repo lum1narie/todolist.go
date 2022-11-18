@@ -13,7 +13,9 @@ var _db *sqlx.DB
 
 // DefaultDSN creates default DSN string
 func DefaultDSN(host, port, user, password, dbname string) string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Asia%%2FTokyo", user, password, host, port, dbname)
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Asia%%2FTokyo",
+		user, password, host, port, dbname)
 }
 
 // Connect opens connection to DB

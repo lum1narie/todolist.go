@@ -46,7 +46,8 @@ func viewInListFromTask(task *database.Task) *TaskViewInList {
 	}
 }
 
-func checkIsOwnedTask(ctx *gin.Context, db *sqlx.DB, taskID uint64) (bool, error) {
+func checkIsOwnedTask(ctx *gin.Context,
+	db *sqlx.DB, taskID uint64) (bool, error) {
 	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
 	return database.IsTaskBelongsToUser(db, taskID, userID)
 }
