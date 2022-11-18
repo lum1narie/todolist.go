@@ -13,7 +13,8 @@ services:
       DB_PASSWORD: sysdes
       DB_NAME: sysdes_todolist_db
     volumes:
-      - .:/go/src/app
+      - ./assets:/app/assets:ro
+      - ./views:/app/views:ro
     ports:
       - 8000:8000
     depends_on:
