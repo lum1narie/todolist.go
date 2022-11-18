@@ -104,9 +104,7 @@ func ShowTask(ctx *gin.Context) {
 	}
 
 	// Get a task with given ID
-	var task database.Task
-	// Use DB#Get for one entry
-	err = db.Get(&task, "SELECT * FROM tasks WHERE id=?", id)
+	task, err := database.GetTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
@@ -143,9 +141,7 @@ func RegisterTask(ctx *gin.Context) {
 	}
 
 	// Create new data with given title on DB
-	result, err := db.Exec(
-		"INSERT INTO tasks (title, description) VALUES (?, ?)",
-		title, description)
+	result, err := database.AddTask(db, title, description)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -173,8 +169,7 @@ func EditTaskForm(ctx *gin.Context) {
 		return
 	}
 	// Get target task
-	var task database.Task
-	err = db.Get(&task, "SELECT * FROM tasks WHERE id=?", id)
+	task, err := database.GetTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusBadRequest, err.Error())(ctx)
 		return
@@ -225,9 +220,7 @@ func UpdateTask(ctx *gin.Context) {
 	}
 
 	// Create new data with given title on DB
-	_, err = db.Exec(
-		"UPDATE tasks SET title = ?, description = ?, is_done = ? WHERE id = ?",
-		title, description, is_done, id)
+	_, err = database.UpdateTaskById(db, uint64(id), title, description, is_done)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -251,7 +244,7 @@ func DeleteTask(ctx *gin.Context) {
 		return
 	}
 	// Delete the task from DB
-	_, err = db.Exec("DELETE FROM tasks WHERE id=?", id)
+	_, err = database.DeleteTaskById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return

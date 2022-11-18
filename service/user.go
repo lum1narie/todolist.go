@@ -51,9 +51,7 @@ func Login(ctx *gin.Context) {
 	}
 
 	// ユーザの取得
-	var user database.User
-	err = db.Get(&user,
-		"SELECT id, name, password FROM users WHERE name = ?", username)
+	user, err := database.GetUserByName(db, username)
 	if err != nil {
 		ctx.HTML(http.StatusBadRequest, "login.html",
 			gin.H{"Title": "Login", "Username": username,
@@ -78,11 +76,11 @@ func Login(ctx *gin.Context) {
 }
 
 func Logout(ctx *gin.Context) {
-    session := sessions.Default(ctx)
-    session.Clear()
-    session.Options(sessions.Options{MaxAge: -1})
-    session.Save()
-    ctx.Redirect(http.StatusFound, "/")
+	session := sessions.Default(ctx)
+	session.Clear()
+	session.Options(sessions.Options{MaxAge: -1})
+	session.Save()
+	ctx.Redirect(http.StatusFound, "/")
 }
 
 func LoginForm(ctx *gin.Context) {
@@ -142,14 +140,12 @@ func RegisterUser(ctx *gin.Context) {
 	}
 
 	// 重複チェック
-	var duplicate int
-	err = db.Get(&duplicate,
-		"SELECT COUNT(*) FROM users WHERE name=?", username)
+	isDuplicate, err := database.IsUserWithNameExist(db, username)
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
-	if duplicate > 0 {
+	if isDuplicate {
 		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
 			gin.H{
 				"Title": "Register user",
@@ -163,9 +159,7 @@ func RegisterUser(ctx *gin.Context) {
 	}
 
 	// DB への保存
-	result, err := db.Exec(
-		"INSERT INTO users(name, password) VALUES (?, ?)",
-		username, hash(password))
+	result, err := database.AddUser(db, username, hash(password))
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
@@ -173,13 +167,15 @@ func RegisterUser(ctx *gin.Context) {
 
 	// 保存状態の確認
 	id, _ := result.LastInsertId()
-	var user database.User
-	err = db.Get(&user, "SELECT id, name, password FROM users WHERE id = ?", id)
+	println(id, uint64(id))
+	user, err := database.GetUserById(db, uint64(id))
 	if err != nil {
 		Error(http.StatusInternalServerError, err.Error())(ctx)
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+	// ctx.JSON(http.StatusOK, user)
+	ctx.HTML(http.StatusOK, "user_added.html",
+		gin.H{"Title": "User added successful", "Username": user.Name})
 }
 
 func NewUserForm(ctx *gin.Context) {

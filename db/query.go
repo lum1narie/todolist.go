@@ -1,6 +1,8 @@
 package db
 
 import (
+	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -11,6 +13,40 @@ const (
 	SearchFalse
 	SearchBoth
 )
+
+func GetUserById(db *sqlx.DB, id uint64) (User, error) {
+	var user User
+	err := db.Get(&user,
+		"SELECT id, name, password FROM users WHERE id = ?", id)
+	return user, err
+}
+
+func GetUserByName(db *sqlx.DB, name string) (User, error) {
+	var user User
+	err := db.Get(&user,
+		"SELECT id, name, password FROM users WHERE name = ?", name)
+	return user, err
+}
+
+func IsUserWithNameExist(db *sqlx.DB, name string) (bool, error) {
+	var count int
+	err := db.Get(&count,
+		"SELECT COUNT(*) FROM users WHERE name=?", name)
+	return count > 0, err
+}
+
+func AddUser(db *sqlx.DB, name string, password []byte) (sql.Result, error) {
+	return db.Exec(
+		"INSERT INTO users(name, password) VALUES (?, ?)",
+		name, password)
+}
+
+func GetTaskById(db *sqlx.DB, id uint64) (Task, error) {
+	var task Task
+	// Use DB#Get for one entry
+	err := db.Get(&task, "SELECT * FROM tasks WHERE id=?", id)
+	return task, err
+}
 
 func GetTasksByUser(db *sqlx.DB,
 	userID uint64, name string, status SearchBool) ([]Task, error) {
@@ -38,4 +74,21 @@ func GetTasksByUser(db *sqlx.DB,
 	}
 
 	return tasks, nil
+}
+
+func AddTask(db *sqlx.DB, title string, description string) (sql.Result, error) {
+	return db.Exec(
+		"INSERT INTO tasks (title, description) VALUES (?, ?)",
+		title, description)
+}
+
+func UpdateTaskById(db *sqlx.DB, id uint64,
+	title string, description string, is_done bool) (sql.Result, error) {
+	return db.Exec(
+		"UPDATE tasks SET title = ?, description = ?, is_done = ? WHERE id = ?",
+		title, description, is_done, id)
+}
+
+func DeleteTaskById(db *sqlx.DB, id uint64) (sql.Result, error) {
+	return db.Exec("DELETE FROM tasks WHERE id=?", id)
 }
