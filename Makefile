@@ -19,7 +19,7 @@ build:
 	@$(CMD) build 
 
 run:
-	@$(CMD) exec app ./main
+	@$(CMD) exec app main
 
 down:
 	@$(CMD) down
