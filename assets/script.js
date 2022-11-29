@@ -6,7 +6,7 @@ const confirm_task_delete = (id) => {
     }
 }
 
-const confirm_user_delete = (id) => {
+const confirm_user_delete = () => {
     if (window.confirm(`ログイン中のユーザーを削除します。よろしいですか？`)) {
         fetch(`/user/me`, {
             method: 'DELETE',
@@ -20,8 +20,13 @@ const confirm_user_delete = (id) => {
     }
 }
 
-const confirm_update = (id) => {
+const confirm_task_update = (id) => {
     if (window.confirm(`Task ${id} を編集します。よろしいですか？`)) {
+        document.edit.submit();
+    }
+}
+const confirm_user_update = () => {
+    if (window.confirm(`ログイン中のユーザーを編集します。よろしいですか？`)) {
         document.edit.submit();
     }
 }

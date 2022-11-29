@@ -41,6 +41,13 @@ func AddUser(db *sqlx.DB, name string, password []byte) (sql.Result, error) {
 		name, password)
 }
 
+func UpdateUserById(db *sqlx.DB, id uint64, name string,
+	password []byte) (sql.Result, error) {
+	return db.Exec(
+		"UPDATE users SET name = ?, password = ? WHERE id = ?",
+		name, password, id)
+}
+
 func DeleteUserById(db *sqlx.DB, id uint64) (sql.Result, error) {
 	return db.Exec("DELETE FROM users WHERE id=?", id)
 }

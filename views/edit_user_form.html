@@ -1,0 +1,20 @@
+{{ template "header" . }}
+<h1>ユーザー更新</h1>
+{{ if .Error }}
+<p>
+    <div class="error">{{ .Error }}</div>
+    <p>
+        {{ end }}
+<form name="edit" action="/user/edit" method="POST">
+    <label>現在のパスワード: </label><input type="password" name="old-password" value="{{ .OldPassword }}" required><br><br>
+    <label>新規ユーザ名: </label><input type="text" name="username" value="{{ .Username }}" required><br>
+    <label>新規パスワード: </label><input type="text" name="password" value="{{ .Password }}" required><br>
+    <label>再入力: </label><input type="text" name="password-re" value="{{ .PasswordRe }}" required><br>
+    <p>
+        <button type="button" onclick=confirm_user_update()>登録</button>
+    </p>
+    <p>
+        <a href="/">ホームに戻る</a>
+    </p>
+</form>
+{{ template "footer" }}

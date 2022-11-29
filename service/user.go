@@ -101,10 +101,8 @@ func RegisterUser(ctx *gin.Context) {
 	if username == "" {
 		ctx.HTML(http.StatusBadRequest, "new_user_form.html",
 			gin.H{
-				"Title":      "Register user",
-				"Error":      "Usernane is not provided",
-				"Password":   password,
-				"PasswordRe": passwordRe,
+				"Title": "Register user",
+				"Error": "Usernane is not provided",
 			})
 		return
 	}
@@ -185,6 +183,138 @@ func RegisterUser(ctx *gin.Context) {
 func NewUserForm(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "new_user_form.html",
 		gin.H{"Title": "Register user"})
+}
+
+func UpdateUser(ctx *gin.Context) {
+	// フォームデータの受け取り
+	username := ctx.PostForm("username")
+	oldPassword := ctx.PostForm("old-password")
+	password := ctx.PostForm("password")
+	passwordRe := ctx.PostForm("password-re")
+
+	if oldPassword == "" {
+		ctx.HTML(http.StatusBadRequest, "edit_user_form.html",
+			gin.H{
+				"Title":    "Edit user",
+				"Error":    "Old Password is not provided",
+				"Username": username,
+			})
+		return
+	}
+
+	// DB 接続
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// ユーザの取得
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	user, err := database.GetUserById(db, userID)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// パスワードの照合
+
+	if hex.EncodeToString(user.Password) !=
+		hex.EncodeToString(hash(oldPassword)) {
+		ctx.HTML(http.StatusBadRequest, "edit_user_form.html",
+			gin.H{"Title": "Edit User",
+				"Error": "Old Password is wrong"})
+		return
+	}
+
+	// フォームデータの照合
+	if username == "" {
+		ctx.HTML(http.StatusBadRequest, "edit_user_form.html",
+			gin.H{
+				"Title":    "Edit user",
+				"Error":    "Username is not provided",
+				"Username": user.Name,
+			})
+		return
+	}
+
+	if password != passwordRe {
+		ctx.HTML(http.StatusBadRequest, "edit_user_form.html",
+			gin.H{
+				"Title":    "Edit user",
+				"Error":    "Retype Password doesn't match",
+				"Username": username,
+			})
+		return
+	}
+
+	var hashedPassword []byte
+	if password == "" {
+		hashedPassword = user.Password
+	} else {
+		if result, msg := validatePassword(password); !result {
+			ctx.HTML(http.StatusBadRequest, "edit_user_form.html",
+				gin.H{
+					"Title":    "Edit user",
+					"Error":    msg,
+					"Username": username,
+				})
+			return
+		}
+
+		hashedPassword = hash(password)
+	}
+
+	// 重複チェック
+	if username != user.Name {
+		isDuplicate, err := database.IsUserWithNameExist(db, username)
+		if err != nil {
+			Error(http.StatusInternalServerError, err.Error())(ctx)
+			return
+		}
+		if isDuplicate {
+			ctx.HTML(http.StatusBadRequest, "new_user_form.html",
+				gin.H{
+					"Title": "Register user",
+					"Error": fmt.Sprintf(
+						"Username '%s' is already taken", username),
+					"Username":   username,
+					"Password":   password,
+					"PasswordRe": passwordRe,
+				})
+			return
+		}
+	}
+
+	// DB への保存
+	_, err = database.UpdateUserById(db, userID, username, hashedPassword)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	ctx.HTML(http.StatusOK, "user_edited.html",
+		gin.H{"Title": "User edited successful", "Username": username})
+}
+
+func EditUserForm(ctx *gin.Context) {
+	// DB 接続
+	db, err := database.GetConnection()
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	// ユーザの取得
+	userID, _ := sessions.Default(ctx).Get(userkey).(uint64)
+	user, err := database.GetUserById(db, userID)
+	if err != nil {
+		Error(http.StatusInternalServerError, err.Error())(ctx)
+		return
+	}
+
+	ctx.HTML(http.StatusOK, "edit_user_form.html",
+		gin.H{"Title": "Edit user", "Username": user.Name})
 }
 
 func DeleteUser(ctx *gin.Context) {
