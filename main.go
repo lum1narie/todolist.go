@@ -52,6 +52,13 @@ func main() {
 	engine.POST("/user/new", service.RegisterUser)
 	engine.DELETE("/user/me", service.LoginCheck, service.DeleteUser)
 
+	userEditGroup := engine.Group("/user/edit")
+	userEditGroup.Use(service.LoginCheck)
+	{
+		userEditGroup.GET("", service.EditUserForm)
+		userEditGroup.POST("", service.UpdateUser)
+	}
+
 	// ログイン
 	engine.GET("/login", service.LoginForm)
 	engine.POST("/login", service.Login)

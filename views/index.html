@@ -3,6 +3,7 @@
 <ul>
     {{ if .IsLoggedIn }}
     <li><a href="/list">登録済みタスク一覧</a></li>
+    <li><a href="/user/edit">ユーザー編集</a></li>
     <li><a href="/logout">ログアウト</a></li>
     <li><a href="javascript:void(0)" onclick=confirm_user_delete()>ユーザー削除</a></li>
     {{ else }}
