@@ -1,0 +1,28 @@
+dsn: mysql://sysdes:sysdes@db:3306/sysdes_todolist_db
+docPath: document/database
+
+name: todolist
+
+format:
+  # Adjust the column width of Markdown format table
+  # Default is false
+  adjust: false
+  # Sort the order of table list and columns
+  # Default is false
+  sort: false
+er:
+  # Skip generation of ER diagram
+  # Default is false
+  skip: false
+  # ER diagram image format
+  # Default is `svg`
+  format: svg
+  # Add table/column comment to ER diagram
+  # Default is false
+  comment: true
+  # Distance between tables that display relations in the ER
+  # Default is 1
+  distance: 2
+  # ER diagram (png/jpg) font (font name, font file, font path or keyword)
+  # Default is "" ( system default )
+  font: ""
