@@ -29,3 +29,7 @@ fmt:
 
 clean:
 	@$(CMD) down --rmi all --volumes --remove-orphans
+
+.PHONY: tbls-doc
+tbls-doc:
+	docker run --network todolist --rm -v ${PWD}:/work -w /work k1low/tbls doc -c document/.tbls.yaml
