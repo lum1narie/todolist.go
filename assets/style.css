@@ -1,1 +1,35 @@
 /* placeholder file for CSS */
+
+.tasks-table {
+    border-collapse:collapse;
+    border:1px solid #000;
+}
+
+.tasks-table tr, th, td {
+    border:1px solid #000;
+    padding: 1px 5px;
+}
+
+
+.tasks-id {
+    text-align: end;
+}
+.tasks-title {
+    text-align: start;
+}
+.tasks-desc {
+    text-align: start;
+}
+.tasks-createdat {
+    text-align: start;
+}
+.tasks-isdone {
+    text-align: center;
+}
+.tasks-donetask {
+    background-color: #ccc;
+}
+
+.error {
+    color: red;
+}

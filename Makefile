@@ -2,26 +2,34 @@ CMD := docker-compose
 SRCS := main.go $(wildcard ./**/*.go)
 
 all:
-	@echo "make up   :: run docker containers"
-	@echo "make run  :: run the application"
-	@echo "make down :: stop docker containers"
-	@echo "make fmt  :: format source files;"
+	@echo "make up    :: run docker containers"
+	@echo "make build :: build docker containers"
+	@echo "make run   :: run the application"
+	@echo "make down  :: stop docker containers"
+	@echo "make fmt   :: format source files;"
 	@echo ""
 	@echo "managed source files;"
 	@echo $(SRCS)
 
-.PHONY: up down format clean
+.PHONY: up build down format clean
 up:
 	@$(CMD) up -d
 
+build:
+	@$(CMD) build 
+
 run:
-	@$(CMD) exec app go run main.go
+	@$(CMD) exec app main
 
 down:
 	@$(CMD) down
 
 fmt:
-	@$(CMD) exec app go fmt ./...
+	go fmt ./...
 
 clean:
 	@$(CMD) down --rmi all --volumes --remove-orphans
+
+.PHONY: tbls-doc
+tbls-doc:
+	docker run --network todolist --rm -v ${PWD}:/work -w /work k1low/tbls doc -c document/.tbls.yaml
